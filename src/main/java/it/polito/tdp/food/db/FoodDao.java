@@ -5,7 +5,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
+import it.polito.tdp.food.model.Arco;
 import it.polito.tdp.food.model.Condiment;
 import it.polito.tdp.food.model.Food;
 import it.polito.tdp.food.model.Portion;
@@ -75,7 +80,7 @@ public class FoodDao {
 	}
 	
 	public List<Portion> listAllPortions(){
-		String sql = "SELECT * FROM portion" ;
+		String sql = "SELECT * FROM `portion` " ;
 		try {
 			Connection conn = DBConnect.getConnection() ;
 
@@ -109,6 +114,100 @@ public class FoodDao {
 
 	}
 	
+	public List<String> listAllPortionDisplayName(){
+		String sql = "SELECT DISTINCT portion_display_name FROM `portion` ORDER BY portion_display_name ASC " ;
+		try {
+			Connection conn = DBConnect.getConnection() ;
+
+			PreparedStatement st = conn.prepareStatement(sql) ;
+			
+			List<String> list = new ArrayList<>() ;
+			
+			ResultSet res = st.executeQuery() ;
+			
+			while(res.next()) {
+				try {
+					list.add(new String(res.getString("portion_display_name")));
+				} catch (Throwable t) {
+					t.printStackTrace();
+				}
+			}
+			
+			conn.close();
+			return list ;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null ;
+		}
+
+	}
 	
+	public List<String> listVertici(double d) {
+		String sql = "SELECT `portion`.portion_display_name, COUNT(*) " + 
+				"FROM `portion` " + 
+				"WhERE `portion`.calories < ? " + 
+				"GROUP BY `portion`.portion_display_name " + 
+				"HAVING COUNT(*) >= 0 ";
+		
+		try {
+			Connection conn = DBConnect.getConnection() ;
+
+			PreparedStatement st = conn.prepareStatement(sql) ;
+			st.setDouble(1, d);
+			
+			List<String> list = new ArrayList<>() ;
+			
+			ResultSet res = st.executeQuery() ;
+			
+			while(res.next()) {
+				try {
+					list.add(new String(res.getString("portion_display_name")));
+				} catch (Throwable t) {
+					t.printStackTrace();
+				}
+			}
+			
+			conn.close();
+			return list ;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null ;
+		}
+	}
+	
+	public List<Arco> getAllArco() {
+		String sql = "SELECT P1.portion_display_name AS NAME1, P2.portion_display_name AS NAME2, COUNT(DISTINCT P1.food_code) AS CNT " + 
+				"FROM `portion` P1, `portion` P2 " + 
+				"WHERE P1.food_code=P2.food_code " + 
+				"AND P1.portion_display_name<>P2.portion_display_name " + 
+				"GROUP BY P1.portion_display_name, P2.portion_display_name ";
+		
+		try {
+			Connection conn = DBConnect.getConnection() ;
+
+			PreparedStatement st = conn.prepareStatement(sql) ;
+			
+			List<Arco> list = new ArrayList<>() ;
+			
+			ResultSet res = st.executeQuery() ;
+			
+			while(res.next()) {
+				try {
+					list.add(new Arco(res.getString("NAME1"), res.getString("NAME2"), res.getInt("CNT")));
+				} catch (Throwable t) {
+					t.printStackTrace();
+				}
+			}
+			
+			conn.close();
+			return list ;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null ;
+		}
+	}
 
 }
